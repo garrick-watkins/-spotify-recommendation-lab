@@ -1,0 +1,1524 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Spotify Recommendation Engine — MIS 432 Portfolio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700;900&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* =====================================================
+   DESIGN SYSTEM — Spotify dark + editorial refinement
+===================================================== */
+:root {
+  --green:    #1DB954;
+  --green-dim:#158a3e;
+  --green-glow: rgba(29,185,84,0.18);
+  --base:     #191414;
+  --surface:  #212121;
+  --surface2: #2a2a2a;
+  --border:   #333;
+  --muted:    #6a6a6a;
+  --sub:      #b3b3b3;
+  --text:     #f0f0f0;
+  --red:      #e22134;
+  --blue:     #1877f2;
+  --amber:    #f59e0b;
+  --radius:   10px;
+  --font: 'DM Sans', sans-serif;
+  --mono: 'DM Mono', monospace;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: #0e0e0e;
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 15px;
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+/* ---- SCROLLBAR ---- */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
+
+/* =====================================================
+   GLOBAL NAV
+===================================================== */
+.site-nav {
+  position: sticky; top: 0; z-index: 500;
+  background: rgba(14,14,14,0.92);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 0;
+  padding: 0 32px;
+  height: 58px;
+}
+
+.nav-logo {
+  display: flex; align-items: center; gap: 10px;
+  margin-right: 36px; text-decoration: none;
+}
+
+.nav-logo-dot {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: var(--green);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+
+.nav-logo-dot svg { width: 15px; height: 15px; fill: #000; }
+
+.nav-logo-text {
+  font-size: 0.82rem; font-weight: 700;
+  color: var(--text); letter-spacing: -0.2px;
+  line-height: 1.2;
+}
+
+.nav-logo-sub { font-size: 0.65rem; font-weight: 400; color: var(--sub); display: block; }
+
+.nav-links { display: flex; gap: 2px; flex: 1; }
+
+.nav-link {
+  padding: 6px 14px; border-radius: 20px;
+  font-size: 0.8rem; font-weight: 600;
+  color: var(--sub); text-decoration: none;
+  transition: all 0.15s; white-space: nowrap;
+  background: transparent; border: none; cursor: pointer;
+}
+
+.nav-link:hover, .nav-link.active { color: var(--text); background: var(--surface2); }
+
+.nav-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+
+.spotify-connect-btn {
+  display: flex; align-items: center; gap: 7px;
+  padding: 7px 16px; border-radius: 20px;
+  border: 1px solid var(--green);
+  background: transparent; color: var(--green);
+  font-size: 0.75rem; font-weight: 700;
+  cursor: pointer; transition: all 0.15s;
+  font-family: var(--font);
+}
+
+.spotify-connect-btn:hover { background: var(--green); color: #000; }
+.spotify-connect-btn.connected { background: var(--green); color: #000; border-color: var(--green); cursor: default; }
+.spotify-connect-btn svg { width: 14px; height: 14px; }
+.spotify-connect-btn.connected svg { fill: #000; }
+
+/* =====================================================
+   HERO SECTION
+===================================================== */
+.hero {
+  position: relative; overflow: hidden;
+  padding: 90px 48px 80px;
+  background: var(--base);
+  border-bottom: 1px solid var(--border);
+}
+
+.hero-bg {
+  position: absolute; inset: 0; z-index: 0;
+  background:
+    radial-gradient(ellipse 60% 70% at 80% 50%, rgba(29,185,84,0.07) 0%, transparent 70%),
+    radial-gradient(ellipse 40% 50% at 10% 80%, rgba(29,185,84,0.04) 0%, transparent 60%);
+}
+
+.hero-grid {
+  position: absolute; inset: 0; z-index: 0; opacity: 0.03;
+  background-image: linear-gradient(var(--green) 1px, transparent 1px),
+                    linear-gradient(90deg, var(--green) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+.hero-content { position: relative; z-index: 1; max-width: 720px; }
+
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 7px;
+  background: rgba(29,185,84,0.12); border: 1px solid rgba(29,185,84,0.25);
+  border-radius: 20px; padding: 5px 14px;
+  font-size: 0.72rem; font-weight: 600; color: var(--green);
+  letter-spacing: 0.5px; text-transform: uppercase;
+  margin-bottom: 22px;
+}
+
+.hero-badge-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); animation: pulse 2s infinite; }
+
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+.hero h1 {
+  font-size: clamp(2rem, 4vw, 3.2rem);
+  font-weight: 900; line-height: 1.1;
+  letter-spacing: -1px; margin-bottom: 16px;
+  color: #fff;
+}
+
+.hero h1 em { font-style: normal; color: var(--green); }
+
+.hero-desc {
+  font-size: 1rem; color: var(--sub);
+  max-width: 560px; line-height: 1.65;
+  margin-bottom: 30px;
+}
+
+.hero-cta-row { display: flex; gap: 12px; flex-wrap: wrap; }
+
+.cta-primary {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: var(--green); color: #000;
+  padding: 11px 24px; border-radius: 30px;
+  font-size: 0.85rem; font-weight: 700;
+  text-decoration: none; transition: all 0.15s;
+  border: none; cursor: pointer; font-family: var(--font);
+}
+
+.cta-primary:hover { background: #1ed760; transform: translateY(-1px); box-shadow: 0 8px 24px rgba(29,185,84,0.3); }
+
+.cta-secondary {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: transparent; color: var(--text);
+  padding: 11px 24px; border-radius: 30px;
+  font-size: 0.85rem; font-weight: 600;
+  text-decoration: none; transition: all 0.15s;
+  border: 1px solid var(--border); cursor: pointer; font-family: var(--font);
+}
+
+.cta-secondary:hover { border-color: var(--sub); background: var(--surface); }
+
+.hero-stats {
+  display: flex; gap: 32px; margin-top: 48px;
+  padding-top: 32px; border-top: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+
+.hero-stat-val { font-size: 1.6rem; font-weight: 900; color: #fff; line-height: 1; }
+.hero-stat-val em { color: var(--green); font-style: normal; }
+.hero-stat-label { font-size: 0.72rem; color: var(--sub); margin-top: 3px; }
+
+/* =====================================================
+   SECTION SHELL
+===================================================== */
+.section {
+  padding: 72px 48px;
+  border-bottom: 1px solid var(--border);
+}
+
+.section-alt { background: var(--base); }
+
+.section-label {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-size: 0.68rem; font-weight: 700; letter-spacing: 2px;
+  text-transform: uppercase; color: var(--green);
+  margin-bottom: 10px;
+}
+
+.section-label::before {
+  content: ''; width: 18px; height: 1px; background: var(--green);
+}
+
+.section-title {
+  font-size: clamp(1.5rem, 3vw, 2.2rem);
+  font-weight: 900; letter-spacing: -0.5px;
+  line-height: 1.15; margin-bottom: 14px; color: #fff;
+}
+
+.section-intro {
+  font-size: 0.95rem; color: var(--sub);
+  max-width: 680px; line-height: 1.7; margin-bottom: 48px;
+}
+
+/* =====================================================
+   BUSINESS STORY — CONCEPT CARDS
+===================================================== */
+.concept-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px; margin-bottom: 48px;
+}
+
+.concept-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 22px 24px;
+  transition: border-color 0.2s, transform 0.2s;
+  position: relative; overflow: hidden;
+}
+
+.concept-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: var(--green); transform: scaleX(0); transition: transform 0.2s;
+  transform-origin: left;
+}
+
+.concept-card:hover { border-color: #444; transform: translateY(-2px); }
+.concept-card:hover::before { transform: scaleX(1); }
+
+.concept-icon { font-size: 1.4rem; margin-bottom: 12px; display: block; }
+
+.concept-title { font-size: 0.9rem; font-weight: 700; color: #fff; margin-bottom: 8px; }
+
+.concept-body { font-size: 0.8rem; color: var(--sub); line-height: 1.6; }
+
+/* =====================================================
+   STAT CALLOUTS
+===================================================== */
+.callout-row {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 16px; margin: 40px 0;
+}
+
+.callout {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 24px;
+  text-align: center;
+}
+
+.callout-num { font-size: 2rem; font-weight: 900; color: var(--green); line-height: 1; }
+.callout-label { font-size: 0.75rem; color: var(--sub); margin-top: 6px; line-height: 1.4; }
+
+/* =====================================================
+   LESSONS BLOCK
+===================================================== */
+.lessons { display: flex; flex-direction: column; gap: 16px; margin-top: 40px; }
+
+.lesson {
+  display: flex; gap: 20px; align-items: flex-start;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 22px 24px;
+}
+
+.lesson-num {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: var(--green-glow); border: 1px solid rgba(29,185,84,0.3);
+  color: var(--green); font-size: 0.8rem; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+
+.lesson-title { font-size: 0.9rem; font-weight: 700; color: #fff; margin-bottom: 4px; }
+.lesson-body { font-size: 0.8rem; color: var(--sub); line-height: 1.6; }
+
+/* =====================================================
+   PART 2 — APP WRAPPER
+===================================================== */
+#app-section {
+  background: #0e0e0e;
+  padding: 0;
+}
+
+.app-header {
+  padding: 36px 48px 0;
+  border-bottom: 1px solid var(--border);
+  background: var(--base);
+}
+
+.app-header-top {
+  display: flex; align-items: flex-end; justify-content: space-between;
+  flex-wrap: wrap; gap: 16px; margin-bottom: 24px;
+}
+
+.app-header-title { font-size: 1.5rem; font-weight: 900; color: #fff; letter-spacing: -0.5px; }
+.app-header-sub { font-size: 0.8rem; color: var(--sub); margin-top: 3px; }
+
+/* Signal counter strip */
+.signal-strip {
+  display: flex; gap: 20px; padding: 14px 0;
+  border-top: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+
+.signal-chip {
+  display: flex; align-items: center; gap: 7px;
+  font-size: 0.75rem; color: var(--sub);
+}
+
+.signal-chip-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+}
+
+.signal-chip strong { color: #fff; font-weight: 700; }
+
+/* =====================================================
+   APP LAYOUT — two column
+===================================================== */
+.app-body {
+  display: grid;
+  grid-template-columns: 1fr 400px;
+  height: calc(100vh - 58px - 150px);
+  min-height: 600px;
+}
+
+/* Left: catalog */
+.catalog-col {
+  overflow-y: auto;
+  padding: 20px 32px 20px 48px;
+  border-right: 1px solid var(--border);
+}
+
+.catalog-toolbar {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 16px; flex-wrap: wrap; gap: 10px;
+}
+
+.catalog-toolbar-left { display: flex; flex-direction: column; gap: 3px; }
+.catalog-count { font-size: 0.72rem; color: var(--muted); }
+
+.wrapped-btn {
+  display: flex; align-items: center; gap: 7px;
+  padding: 8px 18px; border-radius: 20px;
+  font-size: 0.78rem; font-weight: 700;
+  border: none; cursor: not-allowed;
+  background: var(--surface2); color: var(--muted);
+  transition: all 0.2s; font-family: var(--font);
+}
+
+.wrapped-btn.ready {
+  background: linear-gradient(135deg, #1DB954, #1ed760);
+  color: #000; cursor: pointer;
+  box-shadow: 0 0 20px rgba(29,185,84,0.3);
+}
+
+.wrapped-btn.ready:hover { transform: translateY(-1px); box-shadow: 0 4px 24px rgba(29,185,84,0.45); }
+
+/* Progress bar */
+.progress-wrap {
+  margin-bottom: 16px;
+  display: flex; align-items: center; gap: 10px;
+}
+
+.progress-label { font-size: 0.72rem; color: var(--muted); white-space: nowrap; }
+.progress-track { flex: 1; height: 3px; background: var(--surface2); border-radius: 2px; overflow: hidden; }
+.progress-fill { height: 100%; background: var(--green); border-radius: 2px; transition: width 0.3s; }
+
+/* Song rows */
+.song-list { display: flex; flex-direction: column; }
+
+.song-row {
+  display: grid;
+  grid-template-columns: 28px 1fr auto;
+  align-items: center; gap: 14px;
+  padding: 8px 10px;
+  border-radius: 7px;
+  transition: background 0.12s;
+}
+
+.song-row:hover { background: var(--surface); }
+
+.song-num { font-size: 0.78rem; color: var(--muted); text-align: center; font-variant-numeric: tabular-nums; }
+
+.song-info { overflow: hidden; }
+
+.song-title {
+  font-size: 0.85rem; font-weight: 600; color: var(--text);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+.song-title.playing { color: var(--green); }
+
+.song-artist-genre {
+  font-size: 0.72rem; color: var(--sub);
+  display: flex; align-items: center; gap: 6px; margin-top: 1px;
+}
+
+.gdot {
+  width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0;
+}
+
+/* Genre colors */
+.g-Pop      { background: #1DB954; }
+.g-HipHop   { background: #e22134; }
+.g-IndiePop { background: #9b59b6; }
+.g-RnB      { background: #f59e0b; }
+.g-PopRock  { background: #e67e22; }
+.g-Indie    { background: #1abc9c; }
+
+.btn-group { display: flex; gap: 5px; flex-shrink: 0; }
+
+.eng-btn {
+  padding: 4px 10px; border-radius: 15px;
+  border: 1px solid var(--border); background: transparent;
+  font-size: 0.68rem; font-weight: 600;
+  color: var(--sub); cursor: pointer;
+  transition: all 0.12s; white-space: nowrap;
+  font-family: var(--font);
+}
+
+.eng-btn:hover { border-color: #888; color: var(--text); }
+.eng-btn.skip.active  { background: var(--red);  border-color: var(--red);  color: #fff; }
+.eng-btn.play.active  { background: var(--blue); border-color: var(--blue); color: #fff; }
+.eng-btn.replay.active { background: var(--green); border-color: var(--green); color: #000; }
+
+/* =====================================================
+   RIGHT COLUMN
+===================================================== */
+.right-col {
+  display: flex; flex-direction: column; overflow: hidden;
+  background: var(--base);
+}
+
+/* Tabs */
+.right-tabs {
+  display: flex; border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.right-tab {
+  flex: 1; padding: 13px 10px;
+  font-size: 0.75rem; font-weight: 600;
+  color: var(--sub); cursor: pointer;
+  border: none; background: transparent;
+  border-bottom: 2px solid transparent;
+  transition: all 0.15s; font-family: var(--font);
+  text-align: center;
+}
+
+.right-tab:hover { color: var(--text); }
+.right-tab.active { color: var(--green); border-bottom-color: var(--green); }
+
+.right-panel { flex: 1; overflow-y: auto; padding: 16px 20px; display: none; }
+.right-panel.active { display: block; }
+
+/* Recs panel */
+.recs-empty {
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; padding: 50px 20px; text-align: center; gap: 10px;
+}
+
+.recs-empty-icon { font-size: 2rem; opacity: 0.25; }
+.recs-empty p { font-size: 0.78rem; color: var(--muted); line-height: 1.5; }
+
+.similar-strip {
+  background: var(--surface); border-radius: 8px;
+  padding: 10px 14px; margin-bottom: 14px;
+}
+
+.similar-strip p { font-size: 0.68rem; color: var(--sub); margin-bottom: 7px; }
+
+.badge-row { display: flex; gap: 6px; flex-wrap: wrap; }
+
+.sim-badge {
+  background: rgba(29,185,84,0.12); border: 1px solid rgba(29,185,84,0.2);
+  border-radius: 10px; padding: 2px 9px;
+  font-size: 0.65rem; font-weight: 700; color: var(--green);
+}
+
+.rec-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 6px; border-radius: 7px;
+  transition: background 0.12s; margin-bottom: 2px;
+}
+
+.rec-item:hover { background: var(--surface); }
+.rec-rank { font-size: 0.95rem; font-weight: 900; color: var(--green); width: 18px; text-align: center; flex-shrink: 0; }
+.rec-info { flex: 1; overflow: hidden; }
+.rec-name { font-size: 0.82rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rec-meta { font-size: 0.68rem; color: var(--sub); margin-top: 1px; }
+.rec-bar-wrap { text-align: right; flex-shrink: 0; }
+.rec-score-label { font-size: 0.62rem; color: var(--sub); margin-bottom: 3px; }
+.bar-bg { width: 52px; height: 3px; background: var(--surface2); border-radius: 2px; overflow: hidden; }
+.bar-fill { height: 100%; background: var(--green); border-radius: 2px; }
+
+/* Log panel */
+.log-entry {
+  display: flex; gap: 8px; align-items: flex-start;
+  font-size: 0.7rem; padding: 5px 0;
+  border-bottom: 1px solid var(--surface2);
+  animation: slideIn 0.25s ease;
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.log-ts { color: var(--muted); flex-shrink: 0; font-family: var(--mono); font-size: 0.65rem; }
+.log-action { font-weight: 700; flex-shrink: 0; min-width: 46px; }
+.log-action.skip   { color: var(--red); }
+.log-action.play   { color: var(--blue); }
+.log-action.replay { color: var(--green); }
+.log-song { color: var(--text); flex: 1; }
+.log-score { color: var(--muted); flex-shrink: 0; font-family: var(--mono); }
+.log-placeholder { font-size: 0.75rem; color: var(--muted); font-style: italic; }
+
+/* =====================================================
+   PLAYBAR
+===================================================== */
+.playbar {
+  position: sticky; bottom: 0; z-index: 400;
+  background: var(--base);
+  border-top: 1px solid var(--border);
+  padding: 0 32px;
+  height: 72px;
+  display: flex; align-items: center; gap: 20px;
+  backdrop-filter: blur(10px);
+}
+
+.playbar-info { flex: 1; overflow: hidden; min-width: 0; }
+.playbar-song { font-size: 0.82rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.playbar-artist { font-size: 0.72rem; color: var(--sub); margin-top: 2px; }
+.playbar-song.idle { color: var(--muted); }
+
+.playbar-controls { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+
+.pb-btn {
+  width: 34px; height: 34px; border-radius: 50%;
+  border: 1px solid var(--border); background: transparent;
+  color: var(--sub); font-size: 0.9rem; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.15s; font-family: var(--font);
+}
+
+.pb-btn:hover { border-color: var(--text); color: var(--text); }
+.pb-btn.primary { background: var(--green); border-color: var(--green); color: #000; width: 38px; height: 38px; font-size: 1rem; }
+.pb-btn.primary:hover { background: #1ed760; }
+.pb-btn:disabled { opacity: 0.3; cursor: default; }
+
+.playbar-right { margin-left: auto; font-size: 0.7rem; color: var(--muted); flex-shrink: 0; }
+
+/* Spotify player iframe (hidden, used for SDK) */
+#spotify-player { display: none; }
+
+/* =====================================================
+   WRAPPED MODAL
+===================================================== */
+.modal-overlay {
+  display: none; position: fixed; inset: 0; z-index: 600;
+  background: rgba(0,0,0,0.8); backdrop-filter: blur(8px);
+  align-items: center; justify-content: center; padding: 20px;
+}
+
+.modal-overlay.open { display: flex; animation: fadeIn 0.25s ease; }
+
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+.wrapped-modal {
+  background: var(--base); border: 1px solid var(--border);
+  border-radius: 16px; width: 100%; max-width: 480px;
+  max-height: 90vh; overflow-y: auto;
+  animation: riseUp 0.35s cubic-bezier(0.16,1,0.3,1);
+  position: relative;
+}
+
+@keyframes riseUp {
+  from { transform: translateY(24px); opacity: 0; }
+  to   { transform: translateY(0); opacity: 1; }
+}
+
+.wrapped-banner {
+  background: linear-gradient(150deg, #1DB954 0%, #0d6b31 55%, #191414 100%);
+  padding: 30px 28px 26px; border-radius: 14px 14px 0 0;
+  position: relative;
+}
+
+.wrapped-close {
+  position: absolute; top: 14px; right: 14px;
+  background: rgba(0,0,0,0.3); border: none; color: #fff;
+  width: 28px; height: 28px; border-radius: 50%;
+  font-size: 0.9rem; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.15s;
+}
+
+.wrapped-close:hover { background: rgba(0,0,0,0.6); }
+
+.wrapped-eyebrow { font-size: 0.65rem; font-weight: 700; letter-spacing: 2.5px; text-transform: uppercase; color: rgba(255,255,255,0.65); margin-bottom: 5px; }
+
+.wrapped-title { font-size: 1.9rem; font-weight: 900; line-height: 1.1; color: #fff; margin-bottom: 6px; letter-spacing: -0.5px; }
+
+.wrapped-tagline { font-size: 0.8rem; color: rgba(255,255,255,0.7); line-height: 1.4; }
+
+.wrapped-body { padding: 22px 28px 28px; }
+
+.w-section { margin-bottom: 22px; }
+
+.w-label {
+  font-size: 0.62rem; font-weight: 700; letter-spacing: 2px;
+  text-transform: uppercase; color: var(--green); margin-bottom: 10px;
+}
+
+.w-song-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 7px 0; border-bottom: 1px solid var(--surface);
+}
+
+.w-song-row:last-child { border-bottom: none; }
+.w-rank { font-size: 1.2rem; font-weight: 900; color: var(--green); width: 24px; flex-shrink: 0; }
+.w-song-info { flex: 1; overflow: hidden; }
+.w-song-name { font-size: 0.85rem; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.w-song-meta { font-size: 0.7rem; color: var(--sub); margin-top: 1px; }
+.w-action { font-size: 0.68rem; color: var(--muted); flex-shrink: 0; }
+
+.w-stats {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+}
+
+.w-stat {
+  background: var(--surface); border-radius: 8px; padding: 14px 16px;
+}
+
+.w-stat-val { font-size: 1.4rem; font-weight: 900; color: #fff; line-height: 1; }
+.w-stat-key { font-size: 0.68rem; color: var(--sub); margin-top: 3px; line-height: 1.3; }
+
+.w-fun {
+  background: linear-gradient(135deg, rgba(29,185,84,0.08), rgba(29,185,84,0.03));
+  border: 1px solid rgba(29,185,84,0.2);
+  border-radius: 8px; padding: 14px 16px;
+  font-size: 0.85rem; font-weight: 600; line-height: 1.5;
+}
+
+.w-fun em { color: var(--green); font-style: normal; }
+
+.w-note {
+  margin-top: 16px;
+  background: #111; border-radius: 7px;
+  padding: 10px 13px; font-size: 0.68rem; color: var(--muted); line-height: 1.5;
+  display: flex; gap: 8px;
+}
+
+.w-note::before { content: "🔍"; flex-shrink: 0; font-size: 0.75rem; }
+
+/* =====================================================
+   FOOTER
+===================================================== */
+footer {
+  padding: 40px 48px;
+  border-top: 1px solid var(--border);
+  background: var(--base);
+  display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: 16px;
+}
+
+.footer-left { font-size: 0.78rem; color: var(--sub); line-height: 1.6; }
+.footer-left strong { color: var(--text); }
+
+.footer-right {
+  display: flex; align-items: center; gap: 7px;
+  font-size: 0.72rem; color: var(--muted);
+}
+
+.footer-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); }
+
+/* =====================================================
+   RESPONSIVE
+===================================================== */
+@media (max-width: 900px) {
+  .app-body { grid-template-columns: 1fr; height: auto; }
+  .right-col { height: 500px; }
+  .callout-row { grid-template-columns: 1fr 1fr; }
+  .section { padding: 48px 24px; }
+  .hero { padding: 60px 24px; }
+  .app-header { padding: 24px 24px 0; }
+  .catalog-col { padding: 16px 24px; }
+  .nav-links { display: none; }
+}
+
+@media (max-width: 600px) {
+  .callout-row { grid-template-columns: 1fr; }
+  .hero-stats { gap: 20px; }
+  .concept-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- =====================================================
+     NAVIGATION
+===================================================== -->
+<nav class="site-nav">
+  <a class="nav-logo" href="#">
+    <div class="nav-logo-dot">
+      <svg viewBox="0 0 24 24"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/></svg>
+    </div>
+    <div>
+      <div class="nav-logo-text">Recommendation Engine</div>
+      <span class="nav-logo-sub">MIS 432 · AI in Business</span>
+    </div>
+  </a>
+  <div class="nav-links">
+    <a class="nav-link" href="#story">Business Story</a>
+    <a class="nav-link" href="#app-section">Live Demo</a>
+    <a class="nav-link" href="#lessons">Key Lessons</a>
+  </div>
+  <div class="nav-right">
+    <button class="spotify-connect-btn" id="connectBtn" onclick="initiateSpotifyLogin()">
+      <svg viewBox="0 0 24 24" style="fill:var(--green);flex-shrink:0"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/></svg>
+      Connect Spotify
+    </button>
+  </div>
+</nav>
+
+<!-- =====================================================
+     HERO
+===================================================== -->
+<section class="hero" id="top">
+  <div class="hero-bg"></div>
+  <div class="hero-grid"></div>
+  <div class="hero-content">
+    <div class="hero-badge"><div class="hero-badge-dot"></div>MIS 432 · AI in Business · Western Washington University</div>
+    <h1>How <em>Spotify</em> Turns Data Into<br>a Business Moat</h1>
+    <p class="hero-desc">A working recommendation engine built from scratch using Python and collaborative filtering — then rebuilt as a live, interactive product experience. This project demonstrates how behavioral data, machine learning, and product design work together to create one of tech's most defensible competitive advantages.</p>
+    <div class="hero-cta-row">
+      <a class="cta-primary" href="#app-section">Try the Live Demo ↓</a>
+      <a class="cta-secondary" href="#story">Read the Business Story</a>
+    </div>
+    <div class="hero-stats">
+      <div>
+        <div class="hero-stat-val"><em>751M</em></div>
+        <div class="hero-stat-label">Spotify monthly active users</div>
+      </div>
+      <div>
+        <div class="hero-stat-val"><em>100M+</em></div>
+        <div class="hero-stat-label">Songs in the catalog</div>
+      </div>
+      <div>
+        <div class="hero-stat-val"><em>30%</em></div>
+        <div class="hero-stat-label">Listening driven by recommendations</div>
+      </div>
+      <div>
+        <div class="hero-stat-val"><em>~$0</em></div>
+        <div class="hero-stat-label">Marginal cost to generate Wrapped</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- =====================================================
+     PART 1 — BUSINESS STORY
+===================================================== -->
+<section class="section section-alt" id="story">
+  <div class="section-label">Part 1 — The Business Story</div>
+  <h2 class="section-title">The Problem Spotify Actually Had to Solve</h2>
+  <p class="section-intro">Spotify didn't just need to store 100 million songs. They needed to make every single user feel like the entire catalog was curated just for them — at the moment they opened the app. That's not a technology problem. That's a business strategy problem that technology makes possible.</p>
+
+  <div class="callout-row">
+    <div class="callout">
+      <div class="callout-num">100M+</div>
+      <div class="callout-label">Songs in catalog — more than any human could listen to in thousands of lifetimes</div>
+    </div>
+    <div class="callout">
+      <div class="callout-num">30%</div>
+      <div class="callout-label">Of all listening on Spotify is driven by algorithmic recommendations</div>
+    </div>
+    <div class="callout">
+      <div class="callout-num">$0</div>
+      <div class="callout-label">Marginal cost to generate a personalized Wrapped for each of 751M users</div>
+    </div>
+  </div>
+
+  <div class="concept-grid">
+    <div class="concept-card">
+      <span class="concept-icon">🎯</span>
+      <div class="concept-title">Implicit Signals</div>
+      <div class="concept-body">Spotify doesn't ask you to rate songs. Instead, it watches what you actually do — how long you listen, whether you skip, whether you replay. A skip in the first 5 seconds tells the algorithm more than any star rating ever could. This behavioral data is more honest, more abundant, and more useful than anything users would self-report.</div>
+    </div>
+    <div class="concept-card">
+      <span class="concept-icon">🔧</span>
+      <div class="concept-title">Feature Engineering</div>
+      <div class="concept-body">Raw data isn't useful to a model — structured features are. Converting thousands of listening events into metrics like skip rate, replay rate, and genre affinity transforms messy behavioral logs into the clean inputs a recommendation engine can reason about. The quality of your features determines the quality of your model.</div>
+    </div>
+    <div class="concept-card">
+      <span class="concept-icon">👥</span>
+      <div class="concept-title">Collaborative Filtering</div>
+      <div class="concept-body">The engine finds users whose listening history looks like yours, then recommends what they loved that you haven't heard yet. It's the algorithmic version of a trusted friend's recommendation — except the "friend" is a cluster of millions of people whose taste pattern matches yours, without you ever interacting with them.</div>
+    </div>
+    <div class="concept-card">
+      <span class="concept-icon">🔵</span>
+      <div class="concept-title">Unsupervised Clustering</div>
+      <div class="concept-body">No human created the "Late Night Chill" listener cluster. The algorithm found it by noticing patterns in behavior that no one thought to look for. This is unsupervised learning: grouping listeners without labels, without categories, purely from the shape of their engagement data. The clusters become product features.</div>
+    </div>
+    <div class="concept-card">
+      <span class="concept-icon">🗺️</span>
+      <div class="concept-title">Embeddings</div>
+      <div class="concept-body">Every song and every user gets converted into a point in a mathematical space where "closeness" means "similar taste." Songs that land near each other sound alike to the people who listen to them — even if they're in different genres. This is how Spotify can recommend a pop song to a jazz fan when the behavioral pattern fits.</div>
+    </div>
+    <div class="concept-card">
+      <span class="concept-icon">⚠️</span>
+      <div class="concept-title">The Training-Serving Gap</div>
+      <div class="concept-body">AI systems trained on historical data can gradually drift from reality without ever throwing an error. The model keeps running, recommendations keep appearing — but quality quietly degrades. By the time you notice users churning, the root cause may be months old. This is why AI governance is a management problem, not just a technical one.</div>
+    </div>
+    <div class="concept-card">
+      <span class="concept-icon">🏰</span>
+      <div class="concept-title">The Data Moat</div>
+      <div class="concept-body">Spotify's recommendation engine is not primarily a technology advantage — it's a data advantage. Billions of listening sessions teach the model what human ears prefer in ways no competitor starting from zero can replicate quickly. Every new user makes the system smarter for everyone. The moat grows with scale.</div>
+    </div>
+    <div class="concept-card">
+      <span class="concept-icon">🎁</span>
+      <div class="concept-title">Why Wrapped Costs Almost Nothing</div>
+      <div class="concept-body">Spotify Wrapped is not a separate project. It runs on the exact same behavioral dataset that powers daily recommendations all year. The skip rates, replay counts, and genre affinities that the engine tracks for personalization are simply presented back to the user in a visual format once a year. The infrastructure already exists — the marginal cost of Wrapped is nearly zero, and the marketing impact is enormous.</div>
+    </div>
+  </div>
+</section>
+
+<!-- =====================================================
+     KEY LESSONS
+===================================================== -->
+<section class="section" id="lessons">
+  <div class="section-label">Part 1 — Key Takeaways</div>
+  <h2 class="section-title">3 Business Lessons From Building This</h2>
+  <p class="section-intro">Building a recommendation system from scratch — even a simplified one — reveals things about AI in business that are invisible when you only read about it.</p>
+  <div class="lessons">
+    <div class="lesson">
+      <div class="lesson-num">1</div>
+      <div>
+        <div class="lesson-title">Data infrastructure is a business asset, not a cost center</div>
+        <div class="lesson-body">Every recommendation Spotify generates, every Wrapped campaign it launches, every playlist it curates — all of it runs on the same behavioral data it collects as a byproduct of users doing something they were already doing: listening to music. Companies that treat data collection as infrastructure investment rather than overhead can generate compounding returns from a single source of truth for years. The cost is in building the pipeline. The value compounds indefinitely.</div>
+      </div>
+    </div>
+    <div class="lesson">
+      <div class="lesson-num">2</div>
+      <div>
+        <div class="lesson-title">Behavior tells you the truth. Self-reporting lies.</div>
+        <div class="lesson-body">When we ask users to rate things, they tell us what they think they should like. When we watch what they actually do — how long they listen, whether they skip 10 seconds in, whether they replay three times at 2am — we see what they actually feel. The most valuable signal Spotify has is one it never asked for. This principle applies to any business tracking customer behavior: clicks, scrolls, time-on-page, and return visits reveal more than any survey ever will.</div>
+      </div>
+    </div>
+    <div class="lesson">
+      <div class="lesson-num">3</div>
+      <div>
+        <div class="lesson-title">AI systems don't fail loudly — and that's the real risk</div>
+        <div class="lesson-body">When a server crashes, you know immediately. When a recommendation model slowly drifts because user tastes shifted after it was trained, it just quietly serves worse results while everything appears to be working fine. Users churn. Engagement drops. By the time leadership notices, the root cause is months old and hard to trace. The governance lesson is that AI systems need monitoring infrastructure, not just launch infrastructure — and that responsibility belongs to managers, not just engineers.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- =====================================================
+     PART 2 — LIVE APP
+===================================================== -->
+<div id="app-section">
+  <div class="app-header">
+    <div class="app-header-top">
+      <div>
+        <div class="app-header-title">Part 2 — Live Recommendation Engine</div>
+        <div class="app-header-sub">Built with collaborative filtering + cosine similarity · Rate songs to generate real-time recommendations</div>
+      </div>
+      <button class="wrapped-btn" id="wrappedBtn" disabled onclick="openWrapped()">
+        🎁 Generate my Wrapped
+      </button>
+    </div>
+    <div class="signal-strip">
+      <div class="signal-chip">
+        <div class="signal-chip-dot" style="background:var(--green)"></div>
+        Replays: <strong id="cntReplay">0</strong>
+      </div>
+      <div class="signal-chip">
+        <div class="signal-chip-dot" style="background:var(--blue)"></div>
+        Plays: <strong id="cntPlay">0</strong>
+      </div>
+      <div class="signal-chip">
+        <div class="signal-chip-dot" style="background:var(--red)"></div>
+        Skips: <strong id="cntSkip">0</strong>
+      </div>
+      <div class="signal-chip" style="margin-left:auto">
+        <div class="signal-chip-dot" style="background:var(--muted)"></div>
+        Total signals: <strong id="cntTotal">0</strong>
+      </div>
+      <div class="signal-chip" id="spotifyStatusChip" style="display:none">
+        <div class="signal-chip-dot" style="background:var(--green);animation:pulse 2s infinite"></div>
+        Spotify Premium connected
+      </div>
+    </div>
+  </div>
+
+  <div class="app-body">
+    <!-- LEFT: Song catalog -->
+    <div class="catalog-col">
+      <div class="catalog-toolbar">
+        <div class="catalog-toolbar-left">
+          <div style="font-size:0.85rem;font-weight:700;color:#fff">Song Catalog</div>
+          <div class="catalog-count" id="catalogCount">0 / 15 rated</div>
+        </div>
+        <div class="progress-wrap" style="flex:1;margin:0 16px 0">
+          <div class="progress-track" style="width:100%">
+            <div class="progress-fill" id="progressFill" style="width:0%"></div>
+          </div>
+        </div>
+      </div>
+      <div class="song-list" id="songList"></div>
+    </div>
+
+    <!-- RIGHT: Tabs panel -->
+    <div class="right-col">
+      <div class="right-tabs">
+        <button class="right-tab active" onclick="switchTab('recs',this)">Recommendations</button>
+        <button class="right-tab" onclick="switchTab('log',this)">Data Log</button>
+      </div>
+      <div class="right-panel active" id="panel-recs">
+        <div id="recsContent">
+          <div class="recs-empty">
+            <div class="recs-empty-icon">🎵</div>
+            <p>Rate at least 3 songs to activate<br>the collaborative filtering engine.</p>
+          </div>
+        </div>
+      </div>
+      <div class="right-panel" id="panel-log">
+        <div id="signalLog"><p class="log-placeholder">Signals will appear here as you interact…</p></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PLAYBAR -->
+  <div class="playbar">
+    <div class="playbar-info">
+      <div class="playbar-song idle" id="pbSong">No song selected</div>
+      <div class="playbar-artist" id="pbArtist"></div>
+    </div>
+    <div class="playbar-controls">
+      <button class="pb-btn" id="pbStop" onclick="pbStop()" disabled title="Stop">■</button>
+      <button class="pb-btn primary" id="pbPlayPause" onclick="pbToggle()" disabled title="Play/Pause">▶</button>
+    </div>
+    <div class="playbar-right" id="pbMode">Demo Mode</div>
+  </div>
+</div>
+
+<!-- =====================================================
+     WRAPPED MODAL
+===================================================== -->
+<div class="modal-overlay" id="wrappedOverlay" onclick="closeWrappedOnBg(event)">
+  <div class="wrapped-modal" id="wrappedModal">
+    <div class="wrapped-banner">
+      <button class="wrapped-close" onclick="closeWrapped()">✕</button>
+      <div class="wrapped-eyebrow">MIS 432 · Session Wrapped</div>
+      <div class="wrapped-title" id="wTitle">Your Wrapped</div>
+      <div class="wrapped-tagline" id="wTagline"></div>
+    </div>
+    <div class="wrapped-body" id="wBody"></div>
+  </div>
+</div>
+
+<!-- =====================================================
+     FOOTER
+===================================================== -->
+<footer>
+  <div class="footer-left">
+    <strong>Spotify Recommendation Engine</strong><br>
+    Completed as part of MIS 432: AI in Business · College of Business and Economics<br>
+    Western Washington University · Built with Python, collaborative filtering, and cosine similarity
+  </div>
+  <div class="footer-right">
+    <div class="footer-dot"></div>
+    Portfolio project — for educational purposes only
+  </div>
+</footer>
+
+<!-- =====================================================
+     JAVASCRIPT
+===================================================== -->
+<script>
+// ============================================================
+// CONSTANTS
+// ============================================================
+const CLIENT_ID = 'b586d81f528c4bc29c12141188543ec1';
+const REDIRECT_URI = window.location.origin + window.location.pathname;
+const SCOPES = 'streaming user-read-email user-read-private user-modify-playback-state';
+
+const SONGS = [
+  {name:"Blinding Lights",     artist:"The Weeknd",                      genre:"Pop",      uri:"spotify:track:0VjIjW4GlUZAMYd2vXMi3b"},
+  {name:"HUMBLE.",             artist:"Kendrick Lamar",                   genre:"Hip-Hop",  uri:"spotify:track:7KXjTSCq5nL1LoYtL7XAwS"},
+  {name:"Levitating",          artist:"Dua Lipa",                         genre:"Pop",      uri:"spotify:track:463CkQjx2Zk1yXoBuierM9"},
+  {name:"bad guy",             artist:"Billie Eilish",                    genre:"Indie Pop",uri:"spotify:track:2Fxmhks0live0EDyX11pMH"},
+  {name:"God's Plan",          artist:"Drake",                            genre:"Hip-Hop",  uri:"spotify:track:6DCZcSspjsKoFjzjrWbkno"},
+  {name:"As It Was",           artist:"Harry Styles",                     genre:"Pop",      uri:"spotify:track:4Dvkj6JhhA12EX05fT7y2e"},
+  {name:"MONTERO",             artist:"Lil Nas X",                        genre:"Hip-Hop",  uri:"spotify:track:7BqBn9nzAq8spo5e7cZ0dJ"},
+  {name:"drivers license",     artist:"Olivia Rodrigo",                   genre:"Pop",      uri:"spotify:track:5wANPM4fQCJwkW6AIbJ8uu"},
+  {name:"Watermelon Sugar",    artist:"Harry Styles",                     genre:"Pop",      uri:"spotify:track:6UelLqGlWMcVH1E5c4H7lY"},
+  {name:"Peaches",             artist:"Justin Bieber",                    genre:"R&B",      uri:"spotify:track:4iJyoBOLtHqaWYs3vyWkdQ"},
+  {name:"Industry Baby",       artist:"Lil Nas X",                        genre:"Hip-Hop",  uri:"spotify:track:5Z9KSZLzdgIDuvSxmkAjMO"},
+  {name:"good 4 u",            artist:"Olivia Rodrigo",                   genre:"Pop Rock", uri:"spotify:track:4ZtFanR9U6ndgddUvNcjcG"},
+  {name:"Leave The Door Open", artist:"Bruno Mars",                       genre:"R&B",      uri:"spotify:track:0TDLuuLlV54CkRRUOahJb4"},
+  {name:"STAY",                artist:"The Kid LAROI & Justin Bieber",    genre:"Pop",      uri:"spotify:track:5HCyWlXZPP0y6Gqq8TgA20"},
+  {name:"Heat Waves",          artist:"Glass Animals",                    genre:"Indie",    uri:"spotify:track:02MWAaffLxlfxAUY7c5dvx"},
+];
+
+const GENRE_CLASS = {
+  "Pop":"g-Pop","Hip-Hop":"g-HipHop","Indie Pop":"g-IndiePop",
+  "R&B":"g-RnB","Pop Rock":"g-PopRock","Indie":"g-Indie"
+};
+
+const USERS = {
+  user_01:{"As It Was":0.9,"Blinding Lights":0.9,"God's Plan":0.1,"HUMBLE.":0.1,"Heat Waves":0.5,"Industry Baby":0.1,"Leave The Door Open":0.1,"Levitating":0.9,"MONTERO":0.5,"Peaches":0.1,"STAY":0.9,"Watermelon Sugar":0.9,"bad guy":0.1,"drivers license":0.9,"good 4 u":0.5},
+  user_02:{"As It Was":0.5,"Blinding Lights":0.9,"God's Plan":0.1,"HUMBLE.":0.1,"Heat Waves":0.5,"Industry Baby":0.1,"Leave The Door Open":0.1,"Levitating":0.9,"MONTERO":0.1,"Peaches":0.9,"STAY":0.5,"Watermelon Sugar":0.9,"bad guy":0.5,"drivers license":0.9,"good 4 u":0.1},
+  user_03:{"As It Was":0.1,"Blinding Lights":0.1,"God's Plan":0.9,"HUMBLE.":0.9,"Heat Waves":0.1,"Industry Baby":0.9,"Leave The Door Open":0.1,"Levitating":0.1,"MONTERO":0.5,"Peaches":0.5,"STAY":0.1,"Watermelon Sugar":0.5,"bad guy":0.9,"drivers license":0.1,"good 4 u":0.1},
+  user_04:{"As It Was":0.5,"Blinding Lights":0.1,"God's Plan":0.9,"HUMBLE.":0.9,"Heat Waves":0.5,"Industry Baby":0.9,"Leave The Door Open":0.1,"Levitating":0.1,"MONTERO":0.9,"Peaches":0.1,"STAY":0.1,"Watermelon Sugar":0.9,"bad guy":0.5,"drivers license":0.1,"good 4 u":0.1},
+  user_05:{"As It Was":0.9,"Blinding Lights":0.9,"God's Plan":0.9,"HUMBLE.":0.5,"Heat Waves":0.5,"Industry Baby":0.1,"Leave The Door Open":0.5,"Levitating":0.5,"MONTERO":0.1,"Peaches":0.9,"STAY":0.5,"Watermelon Sugar":0.5,"bad guy":0.5,"drivers license":0.1,"good 4 u":0.5},
+  user_06:{"As It Was":0.9,"Blinding Lights":0.9,"God's Plan":0.1,"HUMBLE.":0.5,"Heat Waves":0.1,"Industry Baby":0.1,"Leave The Door Open":0.9,"Levitating":0.9,"MONTERO":0.1,"Peaches":0.9,"STAY":0.9,"Watermelon Sugar":0.5,"bad guy":0.1,"drivers license":0.9,"good 4 u":0.9},
+  user_07:{"As It Was":0.5,"Blinding Lights":0.1,"God's Plan":0.1,"HUMBLE.":0.5,"Heat Waves":0.9,"Industry Baby":0.1,"Leave The Door Open":0.1,"Levitating":0.9,"MONTERO":0.9,"Peaches":0.5,"STAY":0.5,"Watermelon Sugar":0.9,"bad guy":0.9,"drivers license":0.5,"good 4 u":0.5},
+  user_08:{"As It Was":0.5,"Blinding Lights":0.9,"God's Plan":0.9,"HUMBLE.":0.1,"Heat Waves":0.1,"Industry Baby":0.9,"Leave The Door Open":0.5,"Levitating":0.9,"MONTERO":0.1,"Peaches":0.9,"STAY":0.9,"Watermelon Sugar":0.9,"bad guy":0.5,"drivers license":0.9,"good 4 u":0.9},
+  user_09:{"As It Was":0.5,"Blinding Lights":0.9,"God's Plan":0.9,"HUMBLE.":0.9,"Heat Waves":0.1,"Industry Baby":0.9,"Leave The Door Open":0.5,"Levitating":0.9,"MONTERO":0.9,"Peaches":0.5,"STAY":0.9,"Watermelon Sugar":0.9,"bad guy":0.1,"drivers license":0.9,"good 4 u":0.1},
+};
+
+// ============================================================
+// STATE
+// ============================================================
+let scores = {};          // current user engagement scores
+let spotifyToken = null;  // Spotify access token (if authenticated)
+let player = null;        // Spotify Web Playback SDK player
+let deviceId = null;      // SDK device ID
+let isPlaying = false;
+let currentSongIdx = null;
+
+// ============================================================
+// SPOTIFY OAUTH PKCE
+// ============================================================
+function generateCodeVerifier(length = 128) {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~';
+  let result = '';
+  const values = crypto.getRandomValues(new Uint8Array(length));
+  for (let i = 0; i < length; i++) result += chars[values[i] % chars.length];
+  return result;
+}
+
+async function generateCodeChallenge(verifier) {
+  const data = new TextEncoder().encode(verifier);
+  const digest = await crypto.subtle.digest('SHA-256', data);
+  return btoa(String.fromCharCode(...new Uint8Array(digest)))
+    .replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'');
+}
+
+async function initiateSpotifyLogin() {
+  const verifier = generateCodeVerifier();
+  const challenge = await generateCodeChallenge(verifier);
+  sessionStorage.setItem('pkce_verifier', verifier);
+  const params = new URLSearchParams({
+    client_id: CLIENT_ID,
+    response_type: 'code',
+    redirect_uri: REDIRECT_URI,
+    code_challenge_method: 'S256',
+    code_challenge: challenge,
+    scope: SCOPES,
+  });
+  window.location.href = `https://accounts.spotify.com/authorize?${params}`;
+}
+
+async function exchangeCodeForToken(code) {
+  const verifier = sessionStorage.getItem('pkce_verifier');
+  if (!verifier) return;
+  const body = new URLSearchParams({
+    client_id: CLIENT_ID,
+    grant_type: 'authorization_code',
+    code,
+    redirect_uri: REDIRECT_URI,
+    code_verifier: verifier,
+  });
+  try {
+    const res = await fetch('https://accounts.spotify.com/api/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body,
+    });
+    const data = await res.json();
+    if (data.access_token) {
+      spotifyToken = data.access_token;
+      sessionStorage.removeItem('pkce_verifier');
+      // Clean URL
+      window.history.replaceState({}, '', window.location.pathname);
+      initSpotifySDK();
+      setConnected();
+    }
+  } catch(e) { console.warn('Token exchange failed', e); }
+}
+
+function setConnected() {
+  const btn = document.getElementById('connectBtn');
+  btn.classList.add('connected');
+  btn.innerHTML = `<svg viewBox="0 0 24 24" style="fill:#000;width:14px;height:14px"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/></svg> Premium Connected`;
+  document.getElementById('spotifyStatusChip').style.display = 'flex';
+  document.getElementById('pbMode').textContent = 'Spotify Premium';
+}
+
+// ============================================================
+// SPOTIFY WEB PLAYBACK SDK
+// ============================================================
+function initSpotifySDK() {
+  if (!spotifyToken) return;
+  const script = document.createElement('script');
+  script.src = 'https://sdk.scdn.co/spotify-player.js';
+  document.head.appendChild(script);
+}
+
+window.onSpotifyWebPlaybackSDKReady = () => {
+  player = new Spotify.Player({
+    name: 'MIS 432 Recommendation Engine',
+    getOAuthToken: cb => cb(spotifyToken),
+    volume: 0.7,
+  });
+
+  player.addListener('ready', ({ device_id }) => {
+    deviceId = device_id;
+    console.log('Spotify player ready, device:', device_id);
+  });
+
+  player.addListener('player_state_changed', state => {
+    if (!state) return;
+    isPlaying = !state.paused;
+    document.getElementById('pbPlayPause').textContent = isPlaying ? '⏸' : '▶';
+  });
+
+  player.connect();
+};
+
+async function spotifyPlay(uri) {
+  if (!deviceId || !spotifyToken) return false;
+  try {
+    await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`, {
+      method: 'PUT',
+      headers: { Authorization: `Bearer ${spotifyToken}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ uris: [uri] }),
+    });
+    isPlaying = true;
+    return true;
+  } catch(e) { console.warn('Spotify play error', e); return false; }
+}
+
+async function spotifyPause() {
+  if (!player) return;
+  await player.pause();
+  isPlaying = false;
+  document.getElementById('pbPlayPause').textContent = '▶';
+}
+
+async function spotifyResume() {
+  if (!player) return;
+  await player.resume();
+  isPlaying = true;
+  document.getElementById('pbPlayPause').textContent = '⏸';
+}
+
+// ============================================================
+// PLAYBAR CONTROLS
+// ============================================================
+function updatePlaybar(songIdx) {
+  const song = SONGS[songIdx];
+  const el = document.getElementById('pbSong');
+  el.textContent = song.name;
+  el.classList.remove('idle');
+  document.getElementById('pbArtist').textContent = song.artist + ' · ' + song.genre;
+  document.getElementById('pbPlayPause').disabled = false;
+  document.getElementById('pbStop').disabled = false;
+  document.getElementById('pbPlayPause').textContent = '⏸';
+}
+
+function clearPlaybar() {
+  document.getElementById('pbSong').textContent = 'No song selected';
+  document.getElementById('pbSong').classList.add('idle');
+  document.getElementById('pbArtist').textContent = '';
+  document.getElementById('pbPlayPause').disabled = true;
+  document.getElementById('pbStop').disabled = true;
+  document.getElementById('pbPlayPause').textContent = '▶';
+  isPlaying = false;
+  currentSongIdx = null;
+}
+
+async function pbToggle() {
+  if (currentSongIdx === null) return;
+  if (spotifyToken && player) {
+    isPlaying ? await spotifyPause() : await spotifyResume();
+  } else {
+    isPlaying = !isPlaying;
+    document.getElementById('pbPlayPause').textContent = isPlaying ? '⏸' : '▶';
+  }
+}
+
+function pbStop() {
+  if (spotifyToken && player) player.pause();
+  clearPlaybar();
+  renderCatalog();
+}
+
+// ============================================================
+// COSINE SIMILARITY
+// Compares two users' engagement vectors to measure taste overlap.
+// Score of 1.0 = identical pattern. 0.0 = nothing in common.
+// ============================================================
+function cosineSim(a, b, keys) {
+  let dot = 0, ma = 0, mb = 0;
+  for (const k of keys) {
+    const av = a[k]||0, bv = b[k]||0;
+    dot += av*bv; ma += av*av; mb += bv*bv;
+  }
+  return (ma===0||mb===0) ? 0 : dot/(Math.sqrt(ma)*Math.sqrt(mb));
+}
+
+// ============================================================
+// RECOMMENDATION ENGINE
+// ============================================================
+function getRecommendations() {
+  const keys = SONGS.map(s=>s.name);
+  if (Object.keys(scores).length < 3) return null;
+
+  const sims = Object.entries(USERS).map(([uid,u]) => ({uid, sim:cosineSim(scores,u,keys)}));
+  sims.sort((a,b)=>b.sim-a.sim);
+  const top3 = sims.slice(0,3).filter(u=>u.sim>0);
+  if (!top3.length) return {recs:[],similarUsers:[]};
+
+  const cands = {};
+  for (const key of keys) {
+    if (scores[key]!==undefined) continue;
+    let wsum=0, ssum=0;
+    for (const {uid,sim} of top3) {
+      wsum += sim*(USERS[uid][key]||0);
+      ssum += sim;
+    }
+    cands[key] = ssum>0 ? wsum/ssum : 0;
+  }
+
+  const recs = Object.entries(cands)
+    .sort((a,b)=>b[1]-a[1]).slice(0,5)
+    .map(([name,score])=>({...SONGS.find(s=>s.name===name), score:Math.round(score*1000)/1000}));
+
+  return {recs, similarUsers:top3};
+}
+
+// ============================================================
+// RENDER CATALOG
+// ============================================================
+function renderCatalog() {
+  const list = document.getElementById('songList');
+  list.innerHTML = '';
+  const count = Object.keys(scores).length;
+  document.getElementById('catalogCount').textContent = `${count} / 15 rated`;
+  document.getElementById('progressFill').style.width = `${(count/15)*100}%`;
+
+  // Update Wrapped button
+  const wb = document.getElementById('wrappedBtn');
+  if (count >= 5) {
+    wb.classList.add('ready'); wb.disabled = false;
+    wb.textContent = '🎁 Generate my Wrapped';
+  } else {
+    wb.classList.remove('ready'); wb.disabled = true;
+    wb.textContent = count>0 ? `🎁 Wrapped (${5-count} more)` : '🎁 Generate my Wrapped';
+  }
+
+  SONGS.forEach((song, idx) => {
+    const row = document.createElement('div');
+    row.className = 'song-row';
+    const cur = scores[song.name];
+    const gc = GENRE_CLASS[song.genre]||'g-Pop';
+    const isCurrentSong = currentSongIdx === idx;
+    row.innerHTML = `
+      <div class="song-num">${idx+1}</div>
+      <div class="song-info">
+        <div class="song-title${isCurrentSong?' playing':''}">${song.name}</div>
+        <div class="song-artist-genre">
+          <span class="gdot ${gc}"></span>${song.artist}&nbsp;·&nbsp;${song.genre}
+        </div>
+      </div>
+      <div class="btn-group">
+        <button class="eng-btn skip${cur===0.1?' active':''}" onclick="interact(${idx},'skip')">⏭ Skip</button>
+        <button class="eng-btn play${cur===0.5?' active':''}" onclick="interact(${idx},'play')">▶ Play</button>
+        <button class="eng-btn replay${cur===0.9?' active':''}" onclick="interact(${idx},'replay')">🔁 Replay</button>
+      </div>`;
+    list.appendChild(row);
+  });
+}
+
+// ============================================================
+// RENDER RECOMMENDATIONS
+// ============================================================
+function renderRecs(result) {
+  const el = document.getElementById('recsContent');
+  if (!result) {
+    const need = 3 - Object.keys(scores).length;
+    el.innerHTML = `<div class="recs-empty"><div class="recs-empty-icon">🎵</div><p>Rate ${Math.max(0,need)} more song${need!==1?'s':''} to activate<br>the collaborative filtering engine.</p></div>`;
+    return;
+  }
+
+  const badges = result.similarUsers.map(u=>
+    `<span class="sim-badge">${u.uid} ${(u.sim*100).toFixed(0)}%</span>`
+  ).join('');
+
+  let html = `<div class="similar-strip"><p>👥 Closest taste-matches (cosine similarity):</p><div class="badge-row">${badges}</div></div>`;
+
+  result.recs.forEach((song,i)=>{
+    const pct = Math.round((song.score/0.9)*100);
+    const gc = GENRE_CLASS[song.genre]||'g-Pop';
+    html += `<div class="rec-item">
+      <div class="rec-rank">${i+1}</div>
+      <div class="rec-info">
+        <div class="rec-name">${song.name}</div>
+        <div class="rec-meta"><span class="gdot ${gc}" style="width:5px;height:5px;"></span>${song.artist} · ${song.genre}</div>
+      </div>
+      <div class="rec-bar-wrap">
+        <div class="rec-score-label">${song.score.toFixed(2)}</div>
+        <div class="bar-bg"><div class="bar-fill" style="width:${pct}%"></div></div>
+      </div>
+    </div>`;
+  });
+
+  if (!result.recs.length) html += `<div class="recs-empty"><p>Not enough overlap yet.<br>Try rating more songs.</p></div>`;
+  el.innerHTML = html;
+}
+
+// ============================================================
+// UPDATE SIGNAL COUNTERS
+// ============================================================
+function updateCounters() {
+  const entries = Object.values(scores);
+  document.getElementById('cntReplay').textContent = entries.filter(s=>s===0.9).length;
+  document.getElementById('cntPlay').textContent   = entries.filter(s=>s===0.5).length;
+  document.getElementById('cntSkip').textContent   = entries.filter(s=>s===0.1).length;
+  document.getElementById('cntTotal').textContent  = entries.length;
+}
+
+// ============================================================
+// LOG SIGNAL
+// ============================================================
+function logSignal(name, action, score) {
+  const log = document.getElementById('signalLog');
+  const ph = log.querySelector('.log-placeholder');
+  if (ph) ph.remove();
+
+  const now = new Date();
+  const ts = [now.getHours(),now.getMinutes(),now.getSeconds()].map(n=>String(n).padStart(2,'0')).join(':');
+  const entry = document.createElement('div');
+  entry.className = 'log-entry';
+  entry.innerHTML = `
+    <span class="log-ts">${ts}</span>
+    <span class="log-action ${action}">${action.toUpperCase()}</span>
+    <span class="log-song">${name}</span>
+    <span class="log-score">${score}</span>`;
+  log.insertBefore(entry, log.firstChild);
+}
+
+// ============================================================
+// INTERACT — main event handler
+// ============================================================
+async function interact(idx, action) {
+  const song = SONGS[idx];
+  const scoreMap = {skip:0.1, play:0.5, replay:0.9};
+  const score = scoreMap[action];
+
+  scores[song.name] = score;
+  logSignal(song.name, action, score);
+  updateCounters();
+
+  // Handle playback
+  if (action === 'play' || action === 'replay') {
+    if (spotifyToken && deviceId) {
+      await spotifyPlay(song.uri);
+    }
+    currentSongIdx = idx;
+    isPlaying = true;
+    updatePlaybar(idx);
+  } else if (action === 'skip' && currentSongIdx === idx) {
+    if (spotifyToken && player) player.pause();
+    clearPlaybar();
+  }
+
+  renderCatalog();
+  renderRecs(getRecommendations());
+}
+
+// ============================================================
+// TAB SWITCHER
+// ============================================================
+function switchTab(id, el) {
+  document.querySelectorAll('.right-tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.right-panel').forEach(p=>p.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('panel-'+id).classList.add('active');
+}
+
+// ============================================================
+// WRAPPED ENGINE
+// ============================================================
+function computeWrapped() {
+  const entries = Object.entries(scores);
+
+  const top3 = entries
+    .map(([name,score])=>({...SONGS.find(s=>s.name===name),score}))
+    .sort((a,b)=>b.score-a.score).slice(0,3);
+
+  const artistTotals = {};
+  for (const [name,score] of entries) {
+    const s = SONGS.find(x=>x.name===name);
+    if (!artistTotals[s.artist]) artistTotals[s.artist]={total:0,count:0};
+    artistTotals[s.artist].total += score;
+    artistTotals[s.artist].count++;
+  }
+  const topArtist = Object.entries(artistTotals).sort((a,b)=>b[1].total-a[1].total)[0];
+
+  const genreTotals = {};
+  for (const [name,score] of entries) {
+    const s = SONGS.find(x=>x.name===name);
+    if (!genreTotals[s.genre]) genreTotals[s.genre]={total:0,count:0};
+    genreTotals[s.genre].total+=score; genreTotals[s.genre].count++;
+  }
+  const topGenre = Object.entries(genreTotals)
+    .sort((a,b)=>(b[1].total/b[1].count)-(a[1].total/a[1].count))[0];
+
+  const replays = entries.filter(([,s])=>s===0.9).length;
+  const skips   = entries.filter(([,s])=>s===0.1).length;
+
+  const artistReplays = entries.filter(([name,score])=>{
+    const s = SONGS.find(x=>x.name===name);
+    return s.artist===topArtist[0] && score===0.9;
+  }).length;
+  const percentile = artistReplays>=2 ? 1 : artistReplays===1 ? Math.floor(Math.random()*8)+3 : Math.floor(Math.random()*25)+10;
+
+  return {top3, topArtist, topGenre, total:entries.length, replays, skips, percentile};
+}
+
+function openWrapped() {
+  const w = computeWrapped();
+  const firstName = w.topArtist[0].split(' ')[0];
+  document.getElementById('wTitle').textContent = `Your ${firstName} Era`;
+  document.getElementById('wTagline').textContent = `${w.total} interactions revealed. Here's what your listening says about you.`;
+
+  const actionLabel = s => s===0.9?'🔁 Replayed':s===0.5?'▶ Played':'⏭ Skipped';
+
+  const songsHTML = w.top3.map((song,i)=>`
+    <div class="w-song-row">
+      <div class="w-rank">${i+1}</div>
+      <div class="w-song-info">
+        <div class="w-song-name">${song.name}</div>
+        <div class="w-song-meta">${song.artist} · ${song.genre}</div>
+      </div>
+      <div class="w-action">${actionLabel(song.score)}</div>
+    </div>`).join('');
+
+  document.getElementById('wBody').innerHTML = `
+    <div class="w-section">
+      <div class="w-label">🎵 Your Top Songs This Session</div>
+      ${songsHTML}
+    </div>
+    <div class="w-section">
+      <div class="w-label">📊 Session Stats</div>
+      <div class="w-stats">
+        <div class="w-stat"><div class="w-stat-val">${w.total}</div><div class="w-stat-key">Total interactions</div></div>
+        <div class="w-stat"><div class="w-stat-val">${w.replays}</div><div class="w-stat-key">Songs replayed (score 0.9)</div></div>
+        <div class="w-stat"><div class="w-stat-val">${w.skips}</div><div class="w-stat-key">Songs skipped (score 0.1)</div></div>
+        <div class="w-stat"><div class="w-stat-val">${w.topGenre[0]}</div><div class="w-stat-key">Top genre by engagement</div></div>
+      </div>
+    </div>
+    <div class="w-section">
+      <div class="w-label">✨ Your Moment</div>
+      <div class="w-fun">You were in the top <em>${w.percentile}%</em> of <em>${w.topArtist[0]}</em> listeners this session — with a total engagement score of <em>${w.topArtist[1].total.toFixed(1)}</em> across their songs.</div>
+    </div>
+    <div class="w-note">This Wrapped was generated from the exact same data log that powered your recommendations above. Every skip, play, and replay was stored as an implicit engagement score (0.1 / 0.5 / 0.9) — no separate data collection happened here.</div>`;
+
+  document.getElementById('wrappedOverlay').classList.add('open');
+}
+
+function closeWrapped() { document.getElementById('wrappedOverlay').classList.remove('open'); }
+function closeWrappedOnBg(e) { if (e.target===document.getElementById('wrappedOverlay')) closeWrapped(); }
+
+// ============================================================
+// OAUTH CALLBACK HANDLER — checks for ?code= on page load
+// ============================================================
+(async function() {
+  const params = new URLSearchParams(window.location.search);
+  const code = params.get('code');
+  if (code) await exchangeCodeForToken(code);
+})();
+
+// ============================================================
+// INIT
+// ============================================================
+renderCatalog();
+renderRecs(null);
+updateCounters();
+</script>
+</body>
+</html>
